@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BeatBattle
+
+A competitive music listening party app where friends create sessions, add songs to a collaborative playlist, and score each other's music choices in real-time.
+
+## 🚨 Quick Setup Required (3 minutes total)
+
+### 👉 **[START HERE - Click for Step-by-Step Fixes](START_HERE.md)**
+
+**Two quick fixes needed:**
+1. **Database Error** - 2 minutes → [FIX_DATABASE_ERROR.md](FIX_DATABASE_ERROR.md)
+2. **YouTube Search** - 1 minute → [ENABLE_YOUTUBE_API.md](ENABLE_YOUTUBE_API.md)
+
+## Features
+
+- **Session Management:** Create or join music listening sessions with friends
+- **Collaborative Playlists:** Each participant adds songs to the shared queue
+- **Force-Play Mechanic:** Surprise your friends by jumping the queue with your song
+- **Real-time Scoring:** Rate each song as it plays (1-5 stars)
+- **Competition:** Winner determined by highest average score at the end
+- **Music Integration:** Support for YouTube and Spotify
+
+### 🆕 New Limits & Features
+- ✅ **Max 20 active sessions** at any time
+- ✅ **Max 10 participants** per session
+- ✅ **Auto-expiration** after 1 hour of inactivity
+- ✅ **Smart extension** for sessions with 2+ active listeners
+- 📖 See [SESSION_LIMITS.md](SESSION_LIMITS.md) for details
+
+## How It Works
+
+1. Create a new session or join an existing one with a session code
+2. Each participant adds their favorite songs to the playlist
+3. Songs play in order, but anyone can "force-play" to jump ahead
+4. All participants rate each song while it plays
+5. At the end, scores are tallied and a winner is crowned!
+
+## Tech Stack
+
+- **Framework:** Next.js 14+ with App Router
+- **UI:** shadcn/ui + Tailwind CSS
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
 
 ## Getting Started
 
-First, run the development server:
+### Installation
+
+```bash
+npm install
+```
+
+### Development
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` file in the root directory:
 
-## Learn More
+```env
+# Spotify (optional - for song search)
+NEXT_PUBLIC_SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 
-To learn more about Next.js, take a look at the following resources:
+# YouTube (for playback)
+NEXT_PUBLIC_YOUTUBE_API_KEY=your_youtube_api_key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Database (Supabase or other)
+DATABASE_URL=your_database_url
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+beat-battle/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── session/           # Session pages
+│   └── page.tsx           # Home page
+├── components/            # React components
+│   ├── ui/               # shadcn/ui components
+│   └── session/          # Session-specific components
+├── lib/                   # Utilities and types
+│   ├── types/            # TypeScript types
+│   └── utils.ts          # Helper functions
+└── ARCHITECTURE.md        # Detailed architecture documentation
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed implementation recommendations including:
+- Session management strategies
+- Music service integration options (Spotify vs YouTube)
+- Real-time synchronization approaches
+- Invite systems
+- Scoring mechanics
+
+## Next Steps
+
+1. Set up music service APIs (Spotify/YouTube)
+2. Implement real-time backend (Supabase, Socket.io, or Pusher)
+3. Build session creation and joining flows
+4. Create music player component with synchronization
+5. Add scoring and competition features
+6. Implement force-play mechanics
+
+## Contributing
+
+This is an initial setup. Feel free to contribute by:
+- Implementing the suggested features
+- Improving the UI/UX
+- Adding tests
+- Optimizing performance
+
+## License
+
+MIT
