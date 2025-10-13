@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/lib/providers/query-provider";
 import { ReactScanWrapper } from "@/components/react-scan-wrapper";
+import { PasswordGate } from "@/components/password-gate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,9 +31,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReactScanWrapper />
-        <QueryProvider>
-          {children}
-        </QueryProvider>
+        <PasswordGate>
+          <QueryProvider>
+            {children}
+          </QueryProvider>
+        </PasswordGate>
       </body>
     </html>
   );
