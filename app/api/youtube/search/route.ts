@@ -2,6 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
 
+interface YouTubeSearchItem {
+  id: { videoId: string };
+  snippet: {
+    title: string;
+    channelTitle: string;
+    thumbnails: {
+      medium: { url: string };
+    };
+  };
+}
+
+interface YouTubeVideoItem {
+  id: string;
+  snippet: {
+    title: string;
+    channelTitle: string;
+    thumbnails: {
+      medium: { url: string };
+    };
+  };
+  contentDetails: {
+    duration: string;
+  };
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q');
@@ -36,7 +61,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
 
     // Get video details to get duration
-    const videoIds = data.items.map((item: any) => item.id.videoId).join(',');
+    const videoIds = data.items.map((item: YouTubeSearchItem) => item.id.videoId).join(',');
 
     const detailsResponse = await fetch(
       `https://www.googleapis.com/youtube/v3/videos?` +
@@ -50,7 +75,7 @@ export async function GET(request: NextRequest) {
     const detailsData = await detailsResponse.json();
 
     // Format results
-    const results = detailsData.items.map((item: any) => {
+    const results = detailsData.items.map((item: YouTubeVideoItem) => {
       // Parse ISO 8601 duration (e.g., PT4M13S)
       const duration = parseDuration(item.contentDetails.duration);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import YouTube, { YouTubePlayer, YouTubeProps } from 'react-youtube';
 
 interface YouTubePlayerComponentProps {
@@ -42,13 +42,13 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
   };
 
   // Calculate what the current playback time should be based on session start time
-  const getExpectedPlaybackTime = () => {
+  const getExpectedPlaybackTime = useCallback(() => {
     if (!sessionStartedAt) return startTime;
     const startTime_ms = new Date(sessionStartedAt).getTime();
     const now = Date.now();
     const elapsed = Math.floor((now - startTime_ms) / 1000);
     return elapsed;
-  };
+  }, [sessionStartedAt, startTime]);
 
   const handleReady: YouTubeProps['onReady'] = (event) => {
     playerRef.current = event.target;
@@ -62,7 +62,7 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
       if (autoplay) {
         event.target.playVideo().then(() => {
           setIsPlaying(true);
-        }).catch((err) => {
+        }).catch((err: unknown) => {
           console.log('Autoplay blocked, user interaction needed:', err);
           setIsPlaying(false);
         });
@@ -73,17 +73,6 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
     }
 
     onReady?.();
-  };
-
-  const handlePlayClick = async () => {
-    if (playerRef.current) {
-      try {
-        await playerRef.current.playVideo();
-        setIsPlaying(true);
-      } catch (error) {
-        console.error('Error playing video:', error);
-      }
-    }
   };
 
   const handleEnd: YouTubeProps['onEnd'] = () => {
@@ -130,7 +119,7 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
         clearInterval(syncIntervalRef.current);
       }
     };
-  }, [sessionStartedAt, videoId]);
+  }, [sessionStartedAt, videoId, isPlaying, getExpectedPlaybackTime]);
 
   useEffect(() => {
     // Cleanup on unmount

@@ -19,7 +19,7 @@ import type { BroadcastEvents, BroadcastCallback } from './types';
  */
 export class BroadcastHandler {
   private channel: RealtimeChannel;
-  private listeners: Map<string, Set<Function>> = new Map();
+  private listeners: Map<string, Set<(...args: unknown[]) => void>> = new Map();
 
   constructor(channel: RealtimeChannel) {
     this.channel = channel;
@@ -44,7 +44,7 @@ export class BroadcastHandler {
   send<T extends keyof BroadcastEvents>(
     event: T,
     payload: BroadcastEvents[T]
-  ): Promise<'ok' | 'timed out' | 'rate limited'> {
+  ): Promise<'ok' | 'timed out' | 'rate limited' | 'error'> {
     return this.channel.send({
       type: 'broadcast',
       event,
@@ -78,7 +78,7 @@ export class BroadcastHandler {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
-    this.listeners.get(event)!.add(callback);
+    this.listeners.get(event)!.add(callback as (...args: unknown[]) => void);
 
     // Set up the actual Supabase listener
     this.channel.on('broadcast', { event }, ({ payload }) => {
@@ -89,7 +89,7 @@ export class BroadcastHandler {
     return () => {
       const eventListeners = this.listeners.get(event);
       if (eventListeners) {
-        eventListeners.delete(callback);
+        eventListeners.delete(callback as (...args: unknown[]) => void);
         if (eventListeners.size === 0) {
           this.listeners.delete(event);
         }

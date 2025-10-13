@@ -93,8 +93,6 @@ export default function SessionResults({
     })
     .sort((a, b) => b.avgScore - a.avgScore)[0];
 
-  const uniqueArtists = [...new Set(songs.map((s) => s.artist))];
-
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-5xl mx-auto space-y-8">

@@ -39,7 +39,7 @@ export class PresenceHandler {
       const state = this.channel.presenceState();
       this.notifyListeners({
         event: 'sync',
-        currentPresences: state as Record<string, PresenceState[]>,
+        currentPresences: state as unknown as Record<string, PresenceState[]>,
       });
     });
 
@@ -48,7 +48,7 @@ export class PresenceHandler {
       this.notifyListeners({
         event: 'join',
         key,
-        newPresences: newPresences as PresenceState[],
+        newPresences: newPresences as unknown as PresenceState[],
       });
     });
 
@@ -57,7 +57,7 @@ export class PresenceHandler {
       this.notifyListeners({
         event: 'leave',
         key,
-        leftPresences: leftPresences as PresenceState[],
+        leftPresences: leftPresences as unknown as PresenceState[],
       });
     });
   }
@@ -81,7 +81,7 @@ export class PresenceHandler {
    *
    * You can call this multiple times to update your state!
    */
-  async track(state: PresenceState): Promise<'ok' | 'timed out' | 'rate limited'> {
+  async track(state: PresenceState): Promise<'ok' | 'timed out' | 'rate limited' | 'error'> {
     this.currentState = state;
     return this.channel.track(state);
   }
@@ -94,7 +94,7 @@ export class PresenceHandler {
    * await presence.untrack();
    * ```
    */
-  async untrack(): Promise<'ok' | 'timed out' | 'rate limited'> {
+  async untrack(): Promise<'ok' | 'timed out' | 'rate limited' | 'error'> {
     this.currentState = null;
     return this.channel.untrack();
   }
@@ -109,7 +109,7 @@ export class PresenceHandler {
    * presence.update({ is_listening: false });
    * ```
    */
-  async update(partialState: Partial<PresenceState>): Promise<'ok' | 'timed out' | 'rate limited'> {
+  async update(partialState: Partial<PresenceState>): Promise<'ok' | 'timed out' | 'rate limited' | 'error'> {
     if (!this.currentState) {
       throw new Error('Cannot update presence before tracking. Call track() first.');
     }

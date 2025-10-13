@@ -33,8 +33,6 @@ export default function SessionPage() {
   const nextSong = useSessionStore((state) => state.nextSong);
   const addScore = useSessionStore((state) => state.addScore);
   const addSong = useSessionStore((state) => state.addSong);
-  const removeSong = useSessionStore((state) => state.removeSong);
-  const reorderSongs = useSessionStore((state) => state.reorderSongs);
   const updateSession = useSessionStore((state) => state.updateSession);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -89,7 +87,7 @@ export default function SessionPage() {
         setCurrentParticipant(participant);
       }
     }
-  }, [participants]);
+  }, [participants, setCurrentParticipant]);
 
   useEffect(() => {
     // Check if user has already voted for current song
@@ -108,7 +106,7 @@ export default function SessionPage() {
         }
       }
     }
-  }, [session?.current_song_index, songs, currentParticipant, scores]);
+  }, [session, songs, currentParticipant, scores]);
 
   const handleCopyCode = () => {
     if (session) {
@@ -147,7 +145,13 @@ export default function SessionPage() {
     }
   }, [currentParticipant, nextSong]);
 
-  const handleAddSong = async (song: any) => {
+  const handleAddSong = async (song: {
+    id: string;
+    title: string;
+    artist: string;
+    thumbnail: string;
+    duration: number;
+  }) => {
     console.log('handleAddSong called', { session, currentParticipant, song });
 
     if (!session) {

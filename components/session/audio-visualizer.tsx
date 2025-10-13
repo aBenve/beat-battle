@@ -8,8 +8,8 @@ interface AudioVisualizerProps {
 
 export default function AudioVisualizer({ show }: AudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
-  const frequencyDataRef = useRef<Float32Array>();
+  const animationRef = useRef<number | undefined>(undefined);
+  const frequencyDataRef = useRef<Float32Array | undefined>(undefined);
 
   useEffect(() => {
     if (!show || !canvasRef.current) return;

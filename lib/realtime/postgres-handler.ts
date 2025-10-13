@@ -28,21 +28,21 @@ type Score = Database['public']['Tables']['scores']['Row'];
 
 export type PostgresChangeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
 
-export interface PostgresChange<T = any> {
+export interface PostgresChange<T = unknown> {
   eventType: PostgresChangeEvent;
   new: T | null;
   old: T | null;
   table: string;
 }
 
-export type PostgresCallback<T = any> = (change: PostgresChange<T>) => void;
+export type PostgresCallback<T = unknown> = (change: PostgresChange<T>) => void;
 
 /**
  * PostgresHandler manages database change subscriptions
  */
 export class PostgresHandler {
   private channel: RealtimeChannel;
-  private listeners: Map<string, Set<Function>> = new Map();
+  private listeners: Map<string, Set<(...args: unknown[]) => void>> = new Map();
 
   constructor(channel: RealtimeChannel) {
     this.channel = channel;
@@ -170,10 +170,11 @@ export class PostgresHandler {
     if (!this.listeners.has(key)) {
       this.listeners.set(key, new Set());
     }
-    this.listeners.get(key)!.add(callback);
+    this.listeners.get(key)!.add(callback as (...args: unknown[]) => void);
 
     // Set up the Supabase listener
-    this.channel.on(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (this.channel as any).on(
       'postgres_changes',
       {
         event,
@@ -181,7 +182,8 @@ export class PostgresHandler {
         table,
         filter,
       },
-      (payload) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (payload: any) => {
         const change: PostgresChange<T> = {
           eventType: payload.eventType as PostgresChangeEvent,
           new: payload.new as T | null,
@@ -196,7 +198,7 @@ export class PostgresHandler {
     return () => {
       const listeners = this.listeners.get(key);
       if (listeners) {
-        listeners.delete(callback);
+        listeners.delete(callback as (...args: unknown[]) => void);
         if (listeners.size === 0) {
           this.listeners.delete(key);
         }

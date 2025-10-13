@@ -1,10 +1,3 @@
-import type { Database } from '@/lib/supabase/database.types';
-
-type Session = Database['public']['Tables']['sessions']['Row'];
-type Participant = Database['public']['Tables']['participants']['Row'];
-type Song = Database['public']['Tables']['songs']['Row'];
-type Score = Database['public']['Tables']['scores']['Row'];
-
 // Broadcast Events - Ephemeral messages sent between clients
 export interface BroadcastEvents {
   // Score updates - instant feedback when someone votes

@@ -1,20 +1,27 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Use service role key for admin operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
+// Mark this route as dynamic to avoid build-time execution
+export const dynamic = 'force-dynamic';
+
+// Helper to create Supabase client (lazy initialization)
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     }
-  }
-);
+  );
+}
 
 export async function POST() {
   try {
+    const supabase = getSupabaseClient();
+
     // First, extend sessions that have active listening (2+ participants, playing status)
     const { error: extendError } = await supabase.rpc('extend_active_sessions');
 
@@ -48,6 +55,8 @@ export async function POST() {
 // GET endpoint to check session health
 export async function GET() {
   try {
+    const supabase = getSupabaseClient();
+
     const { data: activeCount, error: countError } = await supabase
       .rpc('count_active_sessions');
 
