@@ -1,18 +1,69 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase/client';
+import { useSession } from '@/lib/auth/auth-client';
+import type { Database } from '@/lib/supabase/database.types';
+
+type Group = Database['public']['Tables']['groups']['Row'];
+type GroupMember = Database['public']['Tables']['group_members']['Row'];
 
 export default function CreateSessionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const groupId = searchParams.get('groupId');
+  const { data: session } = useSession();
+
   const [sessionName, setSessionName] = useState('');
   const [userName, setUserName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [group, setGroup] = useState<Group | null>(null);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+
+  // Load group data if groupId is provided
+  useEffect(() => {
+    if (groupId) {
+      loadGroupData(groupId);
+    }
+  }, [groupId]);
+
+  // Auto-fill username if user is logged in
+  useEffect(() => {
+    if (session?.user?.name) {
+      setUserName(session.user.name);
+    }
+  }, [session]);
+
+  const loadGroupData = async (id: string) => {
+    try {
+      const { data: groupData, error: groupError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (groupError) throw groupError;
+      setGroup(groupData);
+      setSessionName(`${groupData.name} Session`);
+
+      const { data: membersData, error: membersError } = await supabase
+        .from('group_members')
+        .select('*')
+        .eq('group_id', id);
+
+      if (membersError) throw membersError;
+      setGroupMembers(membersData || []);
+    } catch (err) {
+      console.error('Error loading group:', err);
+      setError('Failed to load group details');
+    }
+  };
 
   const createSession = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +159,45 @@ export default function CreateSessionPage() {
       localStorage.setItem('participantId', hostId);
       localStorage.setItem('userName', userName);
 
+      // If this session is for a group, link it
+      if (groupId) {
+        const { error: linkError } = await supabase
+          .from('group_sessions')
+          .insert({
+            group_id: groupId,
+            session_id: sessionId_forInsert,
+          });
+
+        if (linkError) {
+          console.error('Error linking session to group:', linkError);
+          // Don't fail session creation if linking fails
+        }
+
+        // Add all group members as participants (except host, who is already added)
+        const currentUserEmail = localStorage.getItem('userEmail');
+        const otherMembers = groupMembers.filter(m => m.user_email !== currentUserEmail);
+
+        if (otherMembers.length > 0) {
+          const participantInserts = otherMembers.map(member => ({
+            id: crypto.randomUUID(),
+            session_id: sessionId_forInsert,
+            user_name: member.user_name,
+            is_host: false,
+          }));
+
+          const { error: membersError } = await supabase
+            .from('participants')
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore - Supabase types issue
+            .insert(participantInserts);
+
+          if (membersError) {
+            console.error('Error adding group members:', membersError);
+            // Don't fail session creation if adding members fails
+          }
+        }
+      }
+
       // Redirect to session
       router.push(`/session/${sessionId_forInsert}`);
     } catch (err) {
@@ -123,7 +213,7 @@ export default function CreateSessionPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Create BeatBattle</CardTitle>
           <CardDescription>
-            Set up your music competition session
+            {group ? `Starting a session for ${group.name}` : 'Set up your music competition session'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -145,7 +235,7 @@ export default function CreateSessionPage() {
 
             <div>
               <label htmlFor="userName" className="block text-sm font-medium mb-2">
-                Your Name
+                Your Name {session?.user && <span className="text-xs text-muted-foreground">(from account)</span>}
               </label>
               <Input
                 id="userName"
@@ -154,7 +244,8 @@ export default function CreateSessionPage() {
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || !!session?.user}
+                readOnly={!!session?.user}
               />
             </div>
 

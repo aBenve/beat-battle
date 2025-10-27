@@ -19,9 +19,10 @@ interface AddSongDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddSong: (song: SearchResult) => Promise<void>;
+  existingSongs: Array<{ source_id: string }>;
 }
 
-export default function AddSongDialog({ open, onOpenChange, onAddSong }: AddSongDialogProps) {
+export default function AddSongDialog({ open, onOpenChange, onAddSong, existingSongs }: AddSongDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -48,6 +49,14 @@ export default function AddSongDialog({ open, onOpenChange, onAddSong }: AddSong
 
   const handleAddSong = async (song: SearchResult) => {
     console.log('Attempting to add song:', song);
+
+    // Validate song duration (max 6 minutes)
+    const MAX_DURATION = 360; // 6 minutes in seconds
+    if (song.duration > MAX_DURATION) {
+      alert(`This song is too long! Maximum duration is 6 minutes. This song is ${formatDuration(song.duration)}.`);
+      return;
+    }
+
     setAddingId(song.id);
     try {
       await onAddSong(song);
@@ -102,41 +111,56 @@ export default function AddSongDialog({ open, onOpenChange, onAddSong }: AddSong
             </p>
           )}
 
-          {results.map((song) => (
-            <div
-              key={song.id}
-              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-            >
-              <Image
-                src={song.thumbnail}
-                alt={song.title}
-                width={80}
-                height={60}
-                className="rounded object-cover"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">{song.title}</div>
-                <div className="text-sm text-muted-foreground truncate">{song.artist}</div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {formatDuration(song.duration)}
-                </div>
-              </div>
-              <Button
-                size="sm"
-                onClick={() => handleAddSong(song)}
-                disabled={addingId === song.id}
+          {results.map((song) => {
+            const isTooLong = song.duration > 360; // 6 minutes
+            const isDuplicate = existingSongs.some((s) => s.source_id === song.id);
+            const isDisabled = isTooLong || isDuplicate;
+
+            return (
+              <div
+                key={song.id}
+                className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                  isDisabled ? 'opacity-50 border-destructive/50' : 'hover:bg-muted/50'
+                }`}
               >
-                {addingId === song.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </>
-                )}
-              </Button>
-            </div>
-          ))}
+                <Image
+                  src={song.thumbnail}
+                  alt={song.title}
+                  width={80}
+                  height={60}
+                  className="rounded object-cover"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{song.title}</div>
+                  <div className="text-sm text-muted-foreground truncate">{song.artist}</div>
+                  <div className={`text-xs mt-1 ${isDisabled ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                    {formatDuration(song.duration)}
+                    {isTooLong && ' (Too long - max 6 min)'}
+                    {isDuplicate && ' (Already in queue)'}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleAddSong(song)}
+                  disabled={addingId === song.id || isDisabled}
+                  variant={isDisabled ? 'ghost' : 'default'}
+                >
+                  {addingId === song.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isTooLong ? (
+                    'Too Long'
+                  ) : isDuplicate ? (
+                    'In Queue'
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </>
+                  )}
+                </Button>
+              </div>
+            );
+          })}
         </div>
       </DialogContent>
     </Dialog>

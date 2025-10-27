@@ -53,8 +53,14 @@ export async function GET(request: NextRequest) {
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('YouTube API error:', errorData);
+      const errorText = await response.text();
+      console.error('YouTube API error:', errorText);
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { error: errorText };
+      }
       throw new Error(`YouTube API request failed: ${JSON.stringify(errorData)}`);
     }
 
@@ -71,6 +77,12 @@ export async function GET(request: NextRequest) {
           key: YOUTUBE_API_KEY,
         })
     );
+
+    if (!detailsResponse.ok) {
+      const errorText = await detailsResponse.text();
+      console.error('YouTube API details error:', errorText);
+      throw new Error(`YouTube API details request failed: ${errorText}`);
+    }
 
     const detailsData = await detailsResponse.json();
 

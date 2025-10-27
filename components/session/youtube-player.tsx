@@ -23,6 +23,7 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
   const playerRef = useRef<YouTubePlayer | null>(null);
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showPlayButton, setShowPlayButton] = useState(false);
 
   const opts: YouTubeProps['opts'] = {
     height: '100%',
@@ -60,11 +61,14 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
       event.target.seekTo(expectedTime, true);
 
       if (autoplay) {
+        // Try to play - if blocked, show play button
         event.target.playVideo().then(() => {
           setIsPlaying(true);
+          setShowPlayButton(false);
         }).catch((err: unknown) => {
-          console.log('Autoplay blocked, user interaction needed:', err);
+          console.log('Autoplay blocked by browser, showing play button:', err);
           setIsPlaying(false);
+          setShowPlayButton(true);
         });
       }
     } catch (error) {
@@ -79,6 +83,49 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
     onEnd();
   };
 
+  const handleManualPlay = async () => {
+    if (!playerRef.current) return;
+
+    try {
+      const expectedTime = getExpectedPlaybackTime();
+      await playerRef.current.seekTo(expectedTime, true);
+      await playerRef.current.playVideo();
+      setIsPlaying(true);
+      setShowPlayButton(false);
+    } catch (error) {
+      console.error('Error playing video:', error);
+    }
+  };
+
+  // Force play when sessionStartedAt changes (song changed)
+  useEffect(() => {
+    if (!playerRef.current || !sessionStartedAt || !autoplay) return;
+
+    console.log('[YouTubePlayer] Session start time changed, forcing sync and play');
+
+    // Give the player a moment to be ready
+    const timeout = setTimeout(async () => {
+      try {
+        const player = playerRef.current;
+        if (!player) return;
+
+        const expectedTime = getExpectedPlaybackTime();
+        console.log('[YouTubePlayer] Seeking to', expectedTime, 'and playing');
+
+        await player.seekTo(expectedTime, true);
+        await player.playVideo();
+        setIsPlaying(true);
+        setShowPlayButton(false);
+      } catch (error) {
+        console.error('[YouTubePlayer] Error forcing playback:', error);
+        setShowPlayButton(true);
+      }
+    }, 100);
+
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionStartedAt, autoplay]); // Removed getExpectedPlaybackTime - causes infinite re-sync
+
   // Sync playback with session time
   useEffect(() => {
     if (!playerRef.current || !sessionStartedAt) return;
@@ -92,8 +139,8 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
         const playerState = await player.getPlayerState();
 
         // If paused (state 2), force play
-        if (playerState === 2 && isPlaying) {
-          console.log('Player is paused, forcing play...');
+        if (playerState === 2 && autoplay) {
+          console.log('[YouTubePlayer] Player is paused, forcing play...');
           player.playVideo();
         } else if (playerState === 1) {
           setIsPlaying(true);
@@ -105,12 +152,14 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
         const drift = Math.abs(currentTime - expectedTime);
 
         if (drift > 3) {
-          console.log(`Out of sync by ${drift}s, resyncing to ${expectedTime}s`);
+          console.log(`[YouTubePlayer] Out of sync by ${drift}s, resyncing to ${expectedTime}s`);
           player.seekTo(expectedTime, true);
-          player.playVideo();
+          if (autoplay) {
+            player.playVideo();
+          }
         }
       } catch (error) {
-        console.error('Error during sync check:', error);
+        console.error('[YouTubePlayer] Error during sync check:', error);
       }
     }, 5000);
 
@@ -119,7 +168,8 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
         clearInterval(syncIntervalRef.current);
       }
     };
-  }, [sessionStartedAt, videoId, isPlaying, getExpectedPlaybackTime]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionStartedAt, videoId, autoplay]); // Removed getExpectedPlaybackTime - it's stable within the interval
 
   useEffect(() => {
     // Cleanup on unmount
@@ -145,15 +195,12 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
         iframeClassName="w-full h-full"
       />
 
-      {/* Overlay to prevent clicks on video - only show when playing */}
-      <div className="absolute inset-0 z-10 cursor-default" />
-
-      {/* Play button overlay when not playing */}
-      {/* {!isPlaying && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+      {/* Play button overlay when autoplay is blocked */}
+      {showPlayButton && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm">
           <button
-            onClick={handlePlayClick}
-            className="flex items-center justify-center w-20 h-20 rounded-full bg-white/90 hover:bg-white transition-all hover:scale-110"
+            onClick={handleManualPlay}
+            className="flex items-center justify-center w-20 h-20 rounded-full bg-white/90 hover:bg-white transition-all hover:scale-110 shadow-2xl"
           >
             <svg
               className="w-10 h-10 ml-1 text-black"
@@ -163,8 +210,14 @@ const YouTubePlayerComponent = memo(function YouTubePlayerComponent({
               <path d="M8 5v14l11-7z" />
             </svg>
           </button>
+          <p className="text-white text-sm mt-4">
+            Click to play
+          </p>
         </div>
-      )} */}
+      )}
+
+      {/* Overlay to prevent clicks on video - only show when playing */}
+      <div className="absolute inset-0 z-10 cursor-default" />
     </div>
   );
 });

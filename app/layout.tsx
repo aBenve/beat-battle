@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/lib/providers/query-provider";
+import AuthProvider from "@/lib/providers/auth-provider";
 import { ReactScanWrapper } from "@/components/react-scan-wrapper";
 import { PasswordGate } from "@/components/password-gate";
 
@@ -32,9 +33,11 @@ export default function RootLayout({
       >
         <ReactScanWrapper />
         <PasswordGate>
-          <QueryProvider>
-            {children}
-          </QueryProvider>
+          <AuthProvider>
+            <QueryProvider>
+              {children}
+            </QueryProvider>
+          </AuthProvider>
         </PasswordGate>
       </body>
     </html>

@@ -67,39 +67,50 @@ export class SessionRealtime {
   }
 
   /**
-   * Connect to the real-time channel and initialize all handlers
+   * Initialize the channel and handlers WITHOUT subscribing yet
    *
-   * This establishes the WebSocket connection and sets up:
-   * - Broadcast messaging
-   * - Presence tracking
-   * - Postgres change listeners
+   * This creates the channel and handlers so listeners can be registered.
+   * Call subscribe() after all listeners are registered.
    */
-  async connect(): Promise<void> {
+  init(): void {
     if (this.channel) {
-      console.warn('Already connected to realtime channel');
+      console.warn('Channel already initialized');
       return;
+    }
+
+    // Create a Supabase Realtime channel
+    // Channel name format: "session:{sessionId}"
+    this.channel = supabase.channel(`session:${this.sessionId}`, {
+      config: {
+        // Enable broadcast with acknowledgment
+        broadcast: { ack: true, self: false },
+        // Enable presence tracking
+        presence: { key: '' }, // Key will be set per user
+      },
+    });
+
+    // Initialize handlers
+    this.broadcast = new BroadcastHandler(this.channel);
+    this.presence = new PresenceHandler(this.channel);
+    this.postgres = new PostgresHandler(this.channel);
+
+    console.log('[Realtime] Channel and handlers initialized');
+  }
+
+  /**
+   * Subscribe to the channel after all listeners have been registered
+   *
+   * IMPORTANT: Call init() first, then register all listeners (onSongs, onSession, etc.),
+   * THEN call subscribe()
+   */
+  async subscribe(): Promise<void> {
+    if (!this.channel) {
+      throw new Error('Channel not initialized. Call init() first.');
     }
 
     this.updateStatus('connecting');
 
     try {
-      // Create a Supabase Realtime channel
-      // Channel name format: "session:{sessionId}"
-      this.channel = supabase.channel(`session:${this.sessionId}`, {
-        config: {
-          // Enable broadcast with acknowledgment
-          broadcast: { ack: true, self: false },
-          // Enable presence tracking
-          presence: { key: '' }, // Key will be set per user
-        },
-      });
-
-      // Initialize handlers
-      this.broadcast = new BroadcastHandler(this.channel);
-      this.presence = new PresenceHandler(this.channel);
-      this.postgres = new PostgresHandler(this.channel);
-
-      // Subscribe to the channel
       const subscribePromise = new Promise<void>((resolve, reject) => {
         this.channel!.subscribe((status) => {
           console.log(`[Realtime] Channel status: ${status}`);
@@ -120,12 +131,22 @@ export class SessionRealtime {
       });
 
       await subscribePromise;
-      console.log('[Realtime] Successfully connected');
+      console.log('[Realtime] Successfully subscribed');
     } catch (error) {
       this.updateStatus('error');
-      console.error('[Realtime] Connection error:', error);
+      console.error('[Realtime] Subscription error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Convenience method: init + subscribe in one call
+   *
+   * @deprecated Use init() then subscribe() for proper listener registration
+   */
+  async connect(): Promise<void> {
+    this.init();
+    await this.subscribe();
   }
 
   /**

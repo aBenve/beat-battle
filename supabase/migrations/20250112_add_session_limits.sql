@@ -20,22 +20,26 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers to track activity
+DROP TRIGGER IF EXISTS track_participant_activity ON participants;
 CREATE TRIGGER track_participant_activity
   AFTER INSERT OR UPDATE ON participants
   FOR EACH ROW
   EXECUTE FUNCTION update_session_activity();
 
+DROP TRIGGER IF EXISTS track_song_activity ON songs;
 CREATE TRIGGER track_song_activity
   AFTER INSERT OR UPDATE ON songs
   FOR EACH ROW
   EXECUTE FUNCTION update_session_activity();
 
+DROP TRIGGER IF EXISTS track_score_activity ON scores;
 CREATE TRIGGER track_score_activity
   AFTER INSERT ON scores
   FOR EACH ROW
   EXECUTE FUNCTION update_session_activity();
 
 -- Function to extend session expiration if there's active listening
+DROP FUNCTION IF EXISTS extend_active_sessions();
 CREATE OR REPLACE FUNCTION extend_active_sessions()
 RETURNS void AS $$
 BEGIN
@@ -53,6 +57,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function to cleanup expired sessions
+DROP FUNCTION IF EXISTS cleanup_expired_sessions();
 CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
 RETURNS TABLE(deleted_count INTEGER) AS $$
 DECLARE

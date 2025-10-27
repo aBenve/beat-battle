@@ -5,6 +5,7 @@ type Session = Database['public']['Tables']['sessions']['Row'];
 type Participant = Database['public']['Tables']['participants']['Row'];
 type Song = Database['public']['Tables']['songs']['Row'];
 type Score = Database['public']['Tables']['scores']['Row'];
+type SkipVote = Database['public']['Tables']['skip_votes']['Row'];
 
 /**
  * PostgresHandler listens to database changes via WebSocket.
@@ -153,6 +154,32 @@ export class PostgresHandler {
   ): () => void {
     const key = `scores:${sessionId}:${event}`;
     return this.listen('scores', `session_id=eq.${sessionId}`, event, callback, key);
+  }
+
+  /**
+   * Listen to changes on the skip_votes table
+   *
+   * @param sessionId - Filter to specific session
+   * @param callback - Function called when skip votes change
+   * @param event - Type of change to listen for (default: all)
+   *
+   * Example:
+   * ```typescript
+   * postgres.onSkipVotes(sessionId, (change) => {
+   *   if (change.eventType === 'INSERT') {
+   *     console.log('Skip vote added:', change.new);
+   *   }
+   *   reloadSkipVotes();
+   * });
+   * ```
+   */
+  onSkipVotes(
+    sessionId: string,
+    callback: PostgresCallback<SkipVote>,
+    event: PostgresChangeEvent = '*'
+  ): () => void {
+    const key = `skip_votes:${sessionId}:${event}`;
+    return this.listen('skip_votes', `session_id=eq.${sessionId}`, event, callback, key);
   }
 
   /**

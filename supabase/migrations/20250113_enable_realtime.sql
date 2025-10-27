@@ -1,16 +1,26 @@
 -- Enable Realtime on BeatBattle tables
 -- This allows WebSocket subscriptions to receive database change events
 
--- Enable Realtime on sessions table
+-- Drop tables from publication if they exist, then add them
+-- This ensures idempotency
+DO $$
+BEGIN
+  -- Try to drop tables from publication (ignore errors if not present)
+  BEGIN
+    ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.sessions;
+    ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.participants;
+    ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.songs;
+    ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.scores;
+  EXCEPTION WHEN OTHERS THEN
+    -- Ignore errors if tables weren't in publication
+    NULL;
+  END;
+END $$;
+
+-- Now add tables to publication
 ALTER PUBLICATION supabase_realtime ADD TABLE public.sessions;
-
--- Enable Realtime on participants table
 ALTER PUBLICATION supabase_realtime ADD TABLE public.participants;
-
--- Enable Realtime on songs table
 ALTER PUBLICATION supabase_realtime ADD TABLE public.songs;
-
--- Enable Realtime on scores table
 ALTER PUBLICATION supabase_realtime ADD TABLE public.scores;
 
 -- Verify Realtime is enabled (should return 4 rows)

@@ -1,18 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase/client';
+import { useSession } from '@/lib/auth/auth-client';
 
 export default function JoinSessionPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [sessionCode, setSessionCode] = useState('');
   const [userName, setUserName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-fill username if user is logged in
+  useEffect(() => {
+    if (session?.user?.name) {
+      setUserName(session.user.name);
+    }
+  }, [session]);
 
   const joinSession = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +127,7 @@ export default function JoinSessionPage() {
 
             <div>
               <label htmlFor="userName" className="block text-sm font-medium mb-2">
-                Your Name
+                Your Name {session?.user && <span className="text-xs text-muted-foreground">(from account)</span>}
               </label>
               <Input
                 id="userName"
@@ -127,7 +136,8 @@ export default function JoinSessionPage() {
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || !!session?.user}
+                readOnly={!!session?.user}
               />
             </div>
 

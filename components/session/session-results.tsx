@@ -33,6 +33,9 @@ export default function SessionResults({
   songs,
   scores,
 }: SessionResultsProps) {
+  console.log('[SessionResults] Rendering with participants:', participants.length, participants);
+  console.log('[SessionResults] Songs:', songs.length, 'Scores:', scores.length);
+
   // Calculate participant statistics
   const participantStats: ParticipantStats[] = participants.map((participant) => {
     const participantSongs = songs.filter((s) => s.added_by === participant.id);
@@ -147,12 +150,12 @@ export default function SessionResults({
                   {/* Avatar & Name */}
                   <Avatar className="h-10 w-10">
                     <AvatarFallback>
-                      {stats.participant.user_name.charAt(0).toUpperCase()}
+                      {stats.participant.user_name?.charAt(0).toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold">
-                      {stats.participant.user_name}
+                      {stats.participant.user_name || 'Unknown'}
                       {stats.participant.is_host && (
                         <Badge variant="secondary" className="ml-2 text-xs">
                           Host
@@ -160,7 +163,7 @@ export default function SessionResults({
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {stats.songsAdded} songs · {stats.totalVotes} votes
+                      {stats.songsAdded} songs · {stats.totalVotes} votes · {stats.participant.karma || 0} karma
                     </div>
                     {stats.bestSong && (
                       <div className="text-xs text-muted-foreground truncate mt-1">
@@ -177,6 +180,9 @@ export default function SessionResults({
                     <div className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
                       <Star className="h-3 w-3 fill-white text-white" />
                       avg
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {stats.participant.karma || 0} pts
                     </div>
                   </div>
                 </div>

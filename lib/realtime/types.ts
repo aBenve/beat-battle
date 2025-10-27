@@ -10,9 +10,19 @@ export interface BroadcastEvents {
     timestamp: number;
   };
 
-  // Chat messages (future feature)
+  // Song added to queue - instant notification when someone adds a song
+  song_added: {
+    song_id: string;
+    title: string;
+    artist: string;
+    added_by: string;
+    timestamp: number;
+  };
+
+  // Chat messages - per-song chat
   chat_message: {
     id: string;
+    song_id: string;
     participant_id: string;
     participant_name: string;
     message: string;
@@ -31,6 +41,48 @@ export interface BroadcastEvents {
     participant_id: string;
     participant_name: string;
     emoji: string;
+    timestamp: number;
+  };
+
+  // Song changed event - notifies all clients when host changes song
+  song_changed: {
+    session_id: string;
+    song_id: string;
+    song_index: number;
+    started_at: string; // ISO timestamp
+    host_id: string;
+    timestamp: number;
+  };
+
+  // Session ended - notifies all clients when host ends the session
+  session_ended: {
+    session_id: string;
+    host_id: string;
+    timestamp: number;
+  };
+
+  // Session started - notifies all clients when host starts the session
+  session_started: {
+    session_id: string;
+    host_id: string;
+    first_song_id: string;
+    timestamp: number;
+  };
+
+  // Skip vote added - notifies all clients when someone votes to skip
+  skip_vote_added: {
+    skip_vote_id: string;
+    song_id: string;
+    participant_id: string;
+    participant_name: string;
+    timestamp: number;
+  };
+
+  // Skip vote removed - notifies all clients when someone removes their skip vote
+  skip_vote_removed: {
+    skip_vote_id: string;
+    song_id: string;
+    participant_id: string;
     timestamp: number;
   };
 }

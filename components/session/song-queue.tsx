@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState, useCallback } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -34,7 +34,7 @@ interface SongItemProps {
   onRemove: (songId: string) => void;
 }
 
-function SortableSongItem({ song, index, isCurrentSong, addedBy, canEdit, onRemove }: SongItemProps) {
+const SortableSongItem = memo(function SortableSongItem({ song, index, isCurrentSong, addedBy, canEdit, onRemove }: SongItemProps) {
   const {
     attributes,
     listeners,
@@ -95,7 +95,7 @@ function SortableSongItem({ song, index, isCurrentSong, addedBy, canEdit, onRemo
       )}
     </div>
   );
-}
+});
 
 function formatDuration(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -112,7 +112,7 @@ interface SongQueueProps {
   onRemove: (songId: string) => Promise<void>;
 }
 
-export default function SongQueue({
+const SongQueue = memo(function SongQueue({
   songs,
   participants,
   currentSongIndex,
@@ -134,7 +134,7 @@ export default function SongQueue({
     })
   );
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -152,7 +152,7 @@ export default function SongQueue({
         console.error('Failed to reorder songs:', error);
       }
     }
-  };
+  }, [localSongs, onReorder, songs]);
 
   if (localSongs.length === 0) {
     return (
@@ -193,4 +193,6 @@ export default function SongQueue({
       </SortableContext>
     </DndContext>
   );
-}
+});
+
+export default SongQueue;
