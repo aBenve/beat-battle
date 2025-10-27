@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { authClient } from '@/lib/auth/auth-client';
 import { getAuthErrorMessage, isValidEmail, validatePassword } from '@/lib/auth/auth-errors';
-import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface SignInDialogProps {
   open: boolean;
@@ -251,7 +251,7 @@ export default function SignInDialog({ open, onOpenChange }: SignInDialogProps) 
               className="text-muted-foreground hover:text-foreground underline"
               disabled={isLoading}
             >
-              {isSignUp ? 'Already have an account? Sign in' : "Don&apos;t have an account? Sign up"}
+              {isSignUp ? `Already have an account? Sign in` : `Don't have an account? Sign up`}
             </button>
           </div>
 
